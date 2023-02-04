@@ -2,6 +2,7 @@
 
 #include "BlueprintPropertyCommentEditor.h"
 #include "PropertyCommentExtension.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "UI/CommentEditOverlay.h"
 
 #define LOCTEXT_NAMESPACE "FBlueprintPropertyCommentEditorModule"
@@ -82,11 +83,13 @@ namespace
 void FBlueprintPropertyCommentEditorModule::StartupModule()
 {
 	RegisterDetailRowExtension();
+	RegisterAssetRegistryActions();
 }
 
 void FBlueprintPropertyCommentEditorModule::ShutdownModule()
 {
 	DeregisterDetailRowExtension();
+	DeregisterAssetRegistryActions();
 }
 
 void FBlueprintPropertyCommentEditorModule::RegisterDetailRowExtension()
@@ -123,6 +126,26 @@ void FBlueprintPropertyCommentEditorModule::HandleCreatePropertyRowExtension(con
 		FGetActionCheckState::CreateLambda([](){ return ECheckBoxState::Undetermined; }),
 		FIsActionButtonVisible::CreateRaw(this, &FBlueprintPropertyCommentEditorModule::CanClickComment, InArgs.PropertyHandle)
 	);
+}
+
+void FBlueprintPropertyCommentEditorModule::RegisterAssetRegistryActions()
+{
+	const FAssetRegistryModule& Module = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	Module.Get().OnAssetRemoved().AddRaw(this, &FBlueprintPropertyCommentEditorModule::HandleOnAssetRemoved);
+}
+
+void FBlueprintPropertyCommentEditorModule::DeregisterAssetRegistryActions()
+{
+	if (FModuleManager::Get().IsModuleLoaded("AssetRegistry"))
+	{
+		const FAssetRegistryModule& Module = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		Module.Get().OnAssetRemoved().RemoveAll(this);
+	}
+}
+
+void FBlueprintPropertyCommentEditorModule::HandleOnAssetRemoved(const FAssetData& AssetData)
+{
+	CloseCurrentOverlayWidget();
 }
 
 FSlateIcon FBlueprintPropertyCommentEditorModule::GetCommentIcon(TSharedPtr<IPropertyHandle> PropertyHandle)
@@ -173,10 +196,8 @@ void FBlueprintPropertyCommentEditorModule::OnClickComment(TSharedPtr<IPropertyH
 		return;
 	}
 
-	if (CurrentOverlayWidget)
-	{
-		ActiveWindow->RemoveOverlaySlot(CurrentOverlayWidget.ToSharedRef());
-	}
+	// Close any already opened widgets
+	CloseCurrentOverlayWidget();
 
 	UBlueprint* Blueprint = GetBlueprintFromPropertyHandle(PropertyHandle);
 	check(IsValid(Blueprint));
@@ -192,33 +213,25 @@ void FBlueprintPropertyCommentEditorModule::OnClickComment(TSharedPtr<IPropertyH
 	ActiveWindow->AddOverlaySlot()
 	[
 		SAssignNew(CurrentOverlayWidget, SCommentEditOverlay)
+		.ParentWindow(ActiveWindow)
 		.Content(InitialComment)
 		.OnConfirmClicked_Lambda([=](FText Comment)
 		{
-			if (ActiveWindow)
-			{
-				ActiveWindow->RemoveOverlaySlot(CurrentOverlayWidget.ToSharedRef());
-			}
-			CurrentOverlayWidget = nullptr;
+			CloseCurrentOverlayWidget();
 
-			if (IsValid(Blueprint))
+			// Check if it's valid low level in case the blueprint had already been deleted
+			if (IsValid(Blueprint) && Blueprint->IsValidLowLevel())
 			{
-				UPropertyCommentExtension* Extension = UPropertyCommentExtension::GetOrCreatePropertyCommentExtension(Blueprint);
-				check(IsValid(Extension));
+				UPropertyCommentExtension* Ext = UPropertyCommentExtension::GetOrCreatePropertyCommentExtension(Blueprint);
+				check(IsValid(Ext));
 
-				Extension->AddComment(PropertyKey, Comment);
+				Ext->AddComment(PropertyKey, Comment);
 				Blueprint->MarkPackageDirty();
 			}
-			UE_LOG(LogTemp, Log, TEXT("Confirm clicked"));
 		})
-		.OnCancelClicked_Lambda([ActiveWindow, this]()
+		.OnCancelClicked_Lambda([this]()
 		{
-			if (ActiveWindow)
-			{
-				ActiveWindow->RemoveOverlaySlot(CurrentOverlayWidget.ToSharedRef());
-			}
-			CurrentOverlayWidget = nullptr;
-			UE_LOG(LogTemp, Log, TEXT("Cancel clicked"));
+			CloseCurrentOverlayWidget();
 		})
 	];
 }
@@ -227,6 +240,20 @@ bool FBlueprintPropertyCommentEditorModule::CanClickComment(TSharedPtr<IProperty
 {
 	const UBlueprint* Blueprint = GetBlueprintFromPropertyHandle(PropertyHandle);
 	return IsValid(Blueprint);
+}
+
+void FBlueprintPropertyCommentEditorModule::CloseCurrentOverlayWidget()
+{
+	if (CurrentOverlayWidget)
+	{
+		TWeakPtr<SWindow> ParentWindow = CurrentOverlayWidget->GetParentWindow();
+		if (ParentWindow.IsValid())
+		{
+			ParentWindow.Pin()->RemoveOverlaySlot(CurrentOverlayWidget.ToSharedRef());
+		}
+	}
+
+	CurrentOverlayWidget = nullptr;
 }
 
 #undef LOCTEXT_NAMESPACE

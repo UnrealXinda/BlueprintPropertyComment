@@ -17,12 +17,18 @@ private:
 	void DeregisterDetailRowExtension();
 	void HandleCreatePropertyRowExtension(const FOnGenerateGlobalRowExtensionArgs& InArgs, TArray<FPropertyRowExtensionButton>& OutExtensions);
 
+	void RegisterAssetRegistryActions();
+	void DeregisterAssetRegistryActions();
+	void HandleOnAssetRemoved(const FAssetData& AssetData);
+
 	FSlateIcon GetCommentIcon(TSharedPtr<IPropertyHandle> PropertyHandle);
 	FText GetCommentLabel(TSharedPtr<IPropertyHandle> PropertyHandle);
 	FText GetCommentTooltip(TSharedPtr<IPropertyHandle> PropertyHandle);
 
 	void OnClickComment(TSharedPtr<IPropertyHandle> PropertyHandle);
 	bool CanClickComment(TSharedPtr<IPropertyHandle> PropertyHandle);
+
+	void CloseCurrentOverlayWidget();
 
 	TSharedPtr<SCommentEditOverlay> CurrentOverlayWidget;
 };

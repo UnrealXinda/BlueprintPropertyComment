@@ -11,6 +11,7 @@
 void SCommentEditOverlay::Construct(const FArguments& InArgs)
 {
 	ParentWindow = InArgs._ParentWindow;
+	MaxCharacterCount = FMath::Max(0, InArgs._MaxCharacterCount);
 	OnConfirmClicked = InArgs._OnConfirmClicked;
 	OnCancelClicked = InArgs._OnCancelClicked;
 
@@ -32,7 +33,6 @@ void SCommentEditOverlay::Construct(const FArguments& InArgs)
 				.HAlign(HAlign_Center)
 				[
 					SNew(SBox)
-					.Padding(8.0f)
 					[
 						SAssignNew(Overlay, SOverlay)
 						.Visibility(EVisibility::SelfHitTestInvisible)
@@ -46,7 +46,6 @@ void SCommentEditOverlay::Construct(const FArguments& InArgs)
 						+SOverlay::Slot()
 						.VAlign(VAlign_Bottom)
 						.HAlign(HAlign_Left)
-						.Padding(12.0f)
 						[
 							CreateCancelButtonWidget().ToSharedRef()
 						]
@@ -54,7 +53,6 @@ void SCommentEditOverlay::Construct(const FArguments& InArgs)
 						+SOverlay::Slot()
 						.VAlign(VAlign_Bottom)
 						.HAlign(HAlign_Right)
-						.Padding(12.0f)
 						[
 							CreateConfirmButtonWidget().ToSharedRef()
 						]
@@ -63,6 +61,11 @@ void SCommentEditOverlay::Construct(const FArguments& InArgs)
 			]
 		]
 	];
+}
+
+TWeakPtr<SWindow> SCommentEditOverlay::GetParentWindow() const
+{
+	return ParentWindow;
 }
 
 TSharedPtr<SWidget> SCommentEditOverlay::CreateCommentWidget(const FText& InitialComment)
@@ -75,7 +78,7 @@ TSharedPtr<SWidget> SCommentEditOverlay::CreateCommentWidget(const FText& Initia
 	.ForegroundColor(FCoreStyle::Get().GetSlateColor("InvertedForeground"))
 	[
 		SNew(SBox)
-		.Padding(8.0f)
+		.Padding(FMargin{0.0f, 0.0f, 0.0f, 8.0f})
 		.MinDesiredWidth(600.0f)
 		.MaxDesiredWidth(1000.0f)
 		.MinDesiredHeight(400.f)
@@ -91,19 +94,15 @@ TSharedPtr<SWidget> SCommentEditOverlay::CreateCommentWidget(const FText& Initia
 				.AutoWrapText(true)
 				.Text(InitialComment)
 				.TextStyle(FEditorStyle::Get(), "Tutorials.Content")
-				// SNew(SHorizontalBox)
-				// +SHorizontalBox::Slot()
-				// .HAlign(HAlign_Fill)
-				// .VAlign(VAlign_Fill)
-				// [
-
-					// SNew(STextBlock)
-					// .Visibility(EVisibility::SelfHitTestInvisible)
-					// .AutoWrapText(true)
-					// .Text(Content)
-					// .TextStyle(FEditorStyle::Get(), "Tutorials.Content")
-					// .HighlightColor(FEditorStyle::Get().GetColor("Tutorials.Browser.HighlightTextColor"))
-				// ]
+				.OnTextChanged_Lambda([this](const FText& Text)
+				{
+					FString Str = Text.ToString();
+					if (Str.Len() > MaxCharacterCount)
+					{
+						Str.LeftInline(MaxCharacterCount);
+						CommentTextBox->SetText(FText::FromString(Str));
+					}
+				})
 			]
 		]
 	];
@@ -121,7 +120,7 @@ TSharedPtr<SWidget> SCommentEditOverlay::CreateCancelButtonWidget()
 	.ContentPadding(0.0f)
 	[
 		SNew(SBox)
-		.Padding(8.0f)
+		.Padding(24.0f)
 		[
 			SNew(SBorder)
 			.BorderImage(&FEditorStyle::Get().GetWidgetStyle<FButtonStyle>("Tutorials.Content.NavigationBackButton").Normal)
@@ -151,7 +150,7 @@ TSharedPtr<SWidget> SCommentEditOverlay::CreateConfirmButtonWidget()
 	.ContentPadding(0.0f)
 	[
 		SNew(SBox)
-		.Padding(8.0f)
+		.Padding(24.0f)
 		[
 			SNew(SBorder)
 			.BorderImage(&FEditorStyle::Get().GetWidgetStyle<FButtonStyle>("Tutorials.Content.NavigationButton").Normal)
