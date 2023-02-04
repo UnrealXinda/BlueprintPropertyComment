@@ -41,11 +41,23 @@ namespace
 			TArray<UObject*> OuterObjects;
 			PropertyHandle->GetOuterObjects(OuterObjects);
 			const UObject* Outer = OuterObjects[0];
-			const UClass* OuterClass = Outer->GetClass();
-
-			if (OuterClass->GetClass() == UBlueprintGeneratedClass::StaticClass())
+			if (Outer->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))
 			{
-				Blueprint = UBlueprint::GetBlueprintFromClass(OuterClass);
+				for (; IsValid(Outer); Outer = Outer->GetOuter())
+				{
+					const UClass* OuterClass = Outer->GetClass();
+					if (Outer->IsA<UBlueprintGeneratedClass>())
+					{
+						Blueprint = UBlueprint::GetBlueprintFromClass(Cast<UBlueprintGeneratedClass>(Outer));
+						break;
+					}
+
+					Blueprint = UBlueprint::GetBlueprintFromClass(OuterClass);
+					if (IsValid(Blueprint))
+					{
+						break;
+					}
+				}
 			}
 		}
 
