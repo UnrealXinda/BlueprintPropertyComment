@@ -3,6 +3,7 @@
 #include "BlueprintPropertyCommentEditor.h"
 #include "PropertyCommentExtension.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Misc/MessageDialog.h"
 #include "UI/CommentEditOverlay.h"
 
 #define LOCTEXT_NAMESPACE "FBlueprintPropertyCommentEditorModule"
@@ -196,6 +197,18 @@ void FBlueprintPropertyCommentEditorModule::OnClickComment(TSharedPtr<IPropertyH
 		return;
 	}
 
+	if (CurrentOverlayWidget.IsValid())
+	{
+		const EAppReturnType::Type MessageType = FMessageDialog::Open(
+			EAppMsgType::OkCancel,
+			LOCTEXT("DiscardCurrentChange_Message", "You are currently editing a comment. Do you wish to discard the changes?"));
+
+		if (MessageType == EAppReturnType::Cancel)
+		{
+			return;
+		}
+	}
+
 	// Close any already opened widgets
 	CloseCurrentOverlayWidget();
 
@@ -215,19 +228,10 @@ void FBlueprintPropertyCommentEditorModule::OnClickComment(TSharedPtr<IPropertyH
 		SAssignNew(CurrentOverlayWidget, SCommentEditOverlay)
 		.ParentWindow(ActiveWindow)
 		.Content(InitialComment)
-		.OnConfirmClicked_Lambda([=](FText Comment)
+		.OnConfirmClicked_Lambda([Blueprint, PropertyKey, this](FText Comment)
 		{
 			CloseCurrentOverlayWidget();
-
-			// Check if it's valid low level in case the blueprint had already been deleted
-			if (IsValid(Blueprint) && Blueprint->IsValidLowLevel())
-			{
-				UPropertyCommentExtension* Ext = UPropertyCommentExtension::GetOrCreatePropertyCommentExtension(Blueprint);
-				check(IsValid(Ext));
-
-				Ext->AddComment(PropertyKey, Comment);
-				Blueprint->MarkPackageDirty();
-			}
+			UPropertyCommentExtension::TryAddPropertyComment(Blueprint, PropertyKey, MoveTemp(Comment));
 		})
 		.OnCancelClicked_Lambda([this]()
 		{

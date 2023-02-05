@@ -18,6 +18,7 @@ class BLUEPRINTPROPERTYCOMMENT_API UPropertyCommentExtension final : public UBlu
 public:
 	static UPropertyCommentExtension* GetPropertyCommentExtension(const UBlueprint* Blueprint);
 	static UPropertyCommentExtension* GetOrCreatePropertyCommentExtension(UBlueprint* Blueprint);
+	static void TryAddPropertyComment(UBlueprint* Blueprint, const FName& PropertyKey, FText Comment);
 
 	bool HasComment(const FName& PropertyKey) const;
 	bool GetComment(const FName& PropertyKey, FText& OutComment) const;

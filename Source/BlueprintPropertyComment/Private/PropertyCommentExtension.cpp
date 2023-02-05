@@ -37,6 +37,19 @@ UPropertyCommentExtension* UPropertyCommentExtension::GetOrCreatePropertyComment
 	return Extension;
 }
 
+void UPropertyCommentExtension::TryAddPropertyComment(UBlueprint* Blueprint, const FName& PropertyKey, FText Comment)
+{
+	// Check if it's valid low level in case the blueprint had already been deleted
+	if (IsValid(Blueprint) && Blueprint->IsValidLowLevel())
+	{
+		UPropertyCommentExtension* Ext = GetOrCreatePropertyCommentExtension(Blueprint);
+		check(IsValid(Ext));
+
+		Ext->AddComment(PropertyKey, MoveTemp(Comment));
+		Blueprint->MarkPackageDirty();
+	}
+}
+
 bool UPropertyCommentExtension::HasComment(const FName& PropertyKey) const
 {
 	return Comments.Contains(PropertyKey);
