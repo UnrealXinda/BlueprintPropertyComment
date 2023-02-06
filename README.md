@@ -11,7 +11,7 @@ Have you ever wanted the ability to leave comments on properties
 so collaborators will not accidentally overwrite an important value
 you have set up?
 
-If you have ever been experiencing any of the aforementioned situation, you
+If you have ever been experiencing any of the aforementioned situations, you
 have come to the right place. The "Blueprint Property Comment" Plug-In is
 as straightforward as it sounds: It allows you to leave comments on individual
 properties!
