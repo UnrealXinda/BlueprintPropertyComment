@@ -48,9 +48,9 @@ namespace
 				for (; IsValid(Outer); Outer = Outer->GetOuter())
 				{
 					const UClass* OuterClass = Outer->GetClass();
-					if (Outer->IsA<UBlueprintGeneratedClass>())
+					if (const UBlueprintGeneratedClass* BlueprintClass = Cast<UBlueprintGeneratedClass>(Outer))
 					{
-						Blueprint = UBlueprint::GetBlueprintFromClass(Cast<UBlueprintGeneratedClass>(Outer));
+						Blueprint = UBlueprint::GetBlueprintFromClass(BlueprintClass);
 						break;
 					}
 
@@ -233,8 +233,32 @@ void FBlueprintPropertyCommentEditorModule::OnClickComment(TSharedPtr<IPropertyH
 			CloseCurrentOverlayWidget();
 			UPropertyCommentExtension::TryAddPropertyComment(Blueprint, PropertyKey, MoveTemp(Comment));
 		})
-		.OnCancelClicked_Lambda([this]()
+		.OnRemoveClicked_Lambda([Blueprint, PropertyKey, this]()
 		{
+			const EAppReturnType::Type MessageType = FMessageDialog::Open(
+					EAppMsgType::OkCancel,
+					LOCTEXT("RemoveComment_Message", "Are you sure you want to remove this comment?"));
+
+			if (MessageType == EAppReturnType::Cancel)
+			{
+				return;
+			}
+			CloseCurrentOverlayWidget();
+			UPropertyCommentExtension::TryRemovePropertyComment(Blueprint, PropertyKey);
+		})
+		.OnCancelClicked_Lambda([this](bool bCommentChanged)
+		{
+			if (bCommentChanged)
+			{
+				const EAppReturnType::Type MessageType = FMessageDialog::Open(
+					EAppMsgType::OkCancel,
+					LOCTEXT("DiscardUnsavedChange_Message", "You have unsaved changes. Do you wish to discard them?"));
+
+				if (MessageType == EAppReturnType::Cancel)
+				{
+					return;
+				}
+			}
 			CloseCurrentOverlayWidget();
 		})
 	];

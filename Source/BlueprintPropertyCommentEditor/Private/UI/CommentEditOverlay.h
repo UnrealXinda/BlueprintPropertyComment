@@ -11,6 +11,7 @@ class SCanvas;
 class SWindow;
 
 DECLARE_DELEGATE_OneParam(FOnConfirmAddComment, FText)
+DECLARE_DELEGATE_OneParam(FOnCancelAddComment, bool)
 
 class SCommentEditOverlay : public SCompoundWidget
 {
@@ -26,25 +27,29 @@ public:
 		SLATE_ARGUMENT(FText, Content)
 		SLATE_ARGUMENT(int32, MaxCharacterCount)
 		SLATE_EVENT(FOnConfirmAddComment, OnConfirmClicked)
-		SLATE_EVENT(FSimpleDelegate, OnCancelClicked)
+		SLATE_EVENT(FOnCancelAddComment, OnCancelClicked)
+		SLATE_EVENT(FSimpleDelegate, OnRemoveClicked)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 	TWeakPtr<SWindow> GetParentWindow() const;
 
 private:
-	TSharedPtr<SWidget> CreateCommentWidget(const FText& InitialComment);
+	TSharedPtr<SWidget> CreateCommentWidget();
 	TSharedPtr<SWidget> CreateConfirmButtonWidget();
 	TSharedPtr<SWidget> CreateCancelButtonWidget();
+	TSharedPtr<SWidget> CreateRemoveButtonWidget();
+
+	bool CommentHasChanged() const;
 
 	TSharedPtr<SCanvas> OverlayCanvas;
 	TWeakPtr<SWindow> ParentWindow;
 
 	FOnConfirmAddComment OnConfirmClicked;
-	FSimpleDelegate OnCancelClicked;
-	// TODO: add remove button
-	//FSimpleDelegate OnRemoveClicked;
+	FOnCancelAddComment OnCancelClicked;
+	FSimpleDelegate OnRemoveClicked;
 
 	TSharedPtr<SMultiLineEditableTextBox> CommentTextBox;
 	int32 MaxCharacterCount;
+	FText InitialComment;
 };

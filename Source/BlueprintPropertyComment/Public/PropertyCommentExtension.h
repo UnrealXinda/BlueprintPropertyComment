@@ -19,6 +19,7 @@ public:
 	static UPropertyCommentExtension* GetPropertyCommentExtension(const UBlueprint* Blueprint);
 	static UPropertyCommentExtension* GetOrCreatePropertyCommentExtension(UBlueprint* Blueprint);
 	static void TryAddPropertyComment(UBlueprint* Blueprint, const FName& PropertyKey, FText Comment);
+	static void TryRemovePropertyComment(UBlueprint* Blueprint, const FName& PropertyKey);
 
 	bool HasComment(const FName& PropertyKey) const;
 	bool GetComment(const FName& PropertyKey, FText& OutComment) const;
