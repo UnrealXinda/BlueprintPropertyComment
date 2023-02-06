@@ -7,7 +7,6 @@ public class BlueprintPropertyComment : ModuleRules
 	public BlueprintPropertyComment(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		OptimizeCode = CodeOptimization.InShippingBuildsOnly;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
