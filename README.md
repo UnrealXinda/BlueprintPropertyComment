@@ -26,8 +26,8 @@ row, type in your comment and hit "Add Comment".
 
 ## Removing Comments
 If there is already a comment added to a given property, you can do the same as "Adding Comments" above.
-This time, there will be a "Remove" button appearing next to "Add Comment". Upon clicking it, you will
-be prompt with a confirm message dialog. Hit "OK" to confirm the removal of the previous comment.
+This time, there will be a "Remove" button appearing next to "Add Comment". Upon clicking on it, you will
+be prompt with a confirmation message dialog. Hit "OK" to confirm the removal of the previous comment.
 
 ![add_comment](Images/remove_comment.gif) 
 
